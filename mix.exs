@@ -11,13 +11,16 @@ defmodule ExBots.Mixfile do
   end
 
   def application do
-    [applications: [:logger, :hedwig, :hedwig_slack],
+    [applications: [:logger, :hedwig, :hedwig_slack, :httpoison],
      mod: {ExBots, []}]
   end
 
   defp deps do
     [{:hedwig, github: "hedwig-im/hedwig", ref: "ea022ef"},
-     {:hedwig_slack, github: "hedwig-im/hedwig_slack", ref: "7991e16"}]
+     {:hedwig_slack, github: "hedwig-im/hedwig_slack", ref: "7991e16"},
+     {:httpoison, "~> 0.9.0"},
+     {:poison, "~> 2.0"},
+     {:distillery, "~> 0.9"}]
   end
 
 end
