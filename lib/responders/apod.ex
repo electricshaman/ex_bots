@@ -1,7 +1,10 @@
 defmodule ExBots.Responders.Apod do
   use Hedwig.Responder
   alias ExBots.Brain
+  require EEx
   require Logger
+
+  EEx.function_from_file :def, :apod_response, "lib/responders/apod.eex", [:assigns]
 
   @usage """
   apod - Display today's Astronomy Picture of the Day.
@@ -21,10 +24,7 @@ defmodule ExBots.Responders.Apod do
   end
 
   def format_apod_output(result) do
-    atomized = Enum.map(result, fn {k,v} -> {String.to_atom(k),v} end)
-    apod = struct(Apod.Picture, atomized)
-
-    "*#{apod.title}*\n\n#{apod.url}\n\n#{apod.explanation}\n\nhttp://apod.nasa.gov/apod/astropix.html"
+    Enum.map(result, fn {k,v} -> {String.to_atom(k),v} end) |> apod_response
   end
 
   def respond?(rate_limit_sec) do

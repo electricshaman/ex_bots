@@ -1,0 +1,4 @@
+*<%= @title %>*
+<%= @url %>
+<%= @explanation %>
+http://apod.nasa.gov/apod/astropix.html
