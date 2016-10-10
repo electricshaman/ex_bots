@@ -7,12 +7,13 @@ defmodule Apod.LiveClient do
   def today do
     api_key = Application.get_env(:ex_bots, :nasa_api_key)
     url = @base_url <> api_key
+
     Logger.debug "Hitting #{url}"
 
     case HTTPoison.get(url) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         case Poison.decode(body) do
-          {:ok, decoded} -> {:ok, decoded}
+          {:ok, decoded} -> {:ok, to_picture(decoded)}
           other -> {:error, other}
         end
       {:ok, %HTTPoison.Response{status_code: status_code}} ->
@@ -21,4 +22,9 @@ defmodule Apod.LiveClient do
         {:error, reason}
     end
   end
+
+  defp to_picture(input) do
+   struct(Apod.Picture, Enum.map(input, fn {k,v} -> {String.to_atom(k),v} end))
+  end
+
 end

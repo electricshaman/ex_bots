@@ -13,7 +13,8 @@ defmodule ExBots.Responders.Apod do
     if respond?(rate) do
       case client.today do
         {:ok, result} ->
-          send(msg, format_apod_output(result))
+          result_map = Map.from_struct(result)
+          send(msg, apod_response(result_map)) # Apod.Picture isn't enumerable so we convert it to a map first.
         {:error, {:bad_status_code, code}} ->
           reply(msg, "Weird: #{code}")
         {:error, _other} ->
@@ -21,10 +22,6 @@ defmodule ExBots.Responders.Apod do
       end
       responded
     end
-  end
-
-  def format_apod_output(result) do
-    Enum.map(result, fn {k,v} -> {String.to_atom(k),v} end) |> apod_response
   end
 
   def respond?(rate_limit_sec) do

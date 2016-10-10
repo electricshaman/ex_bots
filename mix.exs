@@ -11,7 +11,7 @@ defmodule ExBots.Mixfile do
   end
 
   def application do
-    [applications: [:logger, :hedwig, :hedwig_slack, :httpoison],
+    [applications: [:logger, :eex, :hedwig, :hedwig_slack, :httpoison],
      mod: {ExBots, []}]
   end
 
