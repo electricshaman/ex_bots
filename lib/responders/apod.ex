@@ -13,8 +13,9 @@ defmodule ExBots.Responders.Apod do
     if respond?(rate) do
       case client.today do
         {:ok, result} ->
+          # Apod.Picture isn't enumerable so we convert it to a map first so EEx can assign its fields to the template.
           result_map = Map.from_struct(result)
-          send(msg, apod_response(result_map)) # Apod.Picture isn't enumerable so we convert it to a map first.
+          send(msg, apod_response(result_map))
         {:error, {:bad_status_code, code}} ->
           reply(msg, "Weird: #{code}")
         {:error, _other} ->
