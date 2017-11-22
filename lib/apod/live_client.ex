@@ -13,12 +13,17 @@ defmodule Apod.LiveClient do
     case HTTPoison.get(url) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         case Poison.decode(body) do
-          {:ok, decoded} -> {:ok, to_picture(decoded)}
-          other -> {:error, other}
+          {:ok, decoded} ->
+            {:ok, to_picture(decoded)}
+          other ->
+            Logger.warn("Problem decoding response body: #{inspect other}")
+            {:error, other}
         end
       {:ok, %HTTPoison.Response{status_code: status_code}} ->
+        Logger.warn("Bad response status code: #{status_code}")
         {:error, {:bad_status_code, status_code}}
       {:error, %HTTPoison.Error{reason: reason}} ->
+        Logger.warn("Other HTTP error: #{inspect reason}")
         {:error, reason}
     end
   end
