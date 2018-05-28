@@ -60,7 +60,8 @@ defmodule ExBots.RSS.Collector do
 
     _ = prune_entry_history(tid)
 
-    Process.send_after(self(), :collect, :timer.hours(1))
+    # Run the collection again after a random time between 60 and 90 minutes.
+    Process.send_after(self(), :collect, :timer.minutes(Enum.random(60..90)))
 
     {:noreply, state}
   end
