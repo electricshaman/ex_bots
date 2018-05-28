@@ -1,4 +1,4 @@
 *<%= @title %>*
-http://apod.nasa.gov/apod/astropix.html
 <%= if is_nil(@hdurl) do @url else @hdurl end %>
 <%= @explanation %>
+http://apod.nasa.gov/apod/astropix.html

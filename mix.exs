@@ -20,7 +20,9 @@ defmodule ExBots.Mixfile do
      {:hedwig_slack, github: "hedwig-im/hedwig_slack", ref: "7991e16"},
      {:httpoison, "~> 0.9.0"},
      {:poison, "~> 2.0"},
-     {:distillery, "~> 0.9"}]
+     {:distillery, "~> 0.9"},
+     {:timex, "~> 3.1"},
+     {:bloomex, "~> 1.0"},
+     {:feeder_ex, "~> 1.1"}]
   end
-
 end

@@ -4,7 +4,7 @@ defmodule ExBots.Responders.Apod do
   require EEx
   require Logger
 
-  EEx.function_from_file :def, :apod_response, "lib/responders/apod.eex", [:assigns]
+  EEx.function_from_file(:def, :apod_response, "lib/responders/apod.eex", [:assigns])
 
   @usage """
   apod - Display today's Astronomy Picture of the Day.
@@ -16,11 +16,14 @@ defmodule ExBots.Responders.Apod do
           # Apod.Picture isn't enumerable so we convert it to a map first so EEx can assign its fields to the template.
           result_map = Map.from_struct(result)
           send(msg, apod_response(result_map))
+
         {:error, {:bad_status_code, code}} ->
           reply(msg, "Weird: #{code}")
+
         {:error, _other} ->
           reply(msg, "Get it yourself.")
       end
+
       responded
     end
   end
@@ -35,5 +38,4 @@ defmodule ExBots.Responders.Apod do
   def responded do
     :ok = Brain.memorize(:last_response, System.monotonic_time(:seconds))
   end
-
 end

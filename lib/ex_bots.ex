@@ -7,6 +7,8 @@ defmodule ExBots do
     children = [
       worker(ExBots.Brain, []),
       worker(ExBots.Astrobot, []),
+      worker(ExBots.RSS.Collector, ["#bottest", "https://www.universetoday.com/feed/", :ets.new(nil, [:public])], id: UTCollector),
+      worker(ExBots.RSS.Collector, ["#bottest", "https://spaceflightnow.com/feed/", :ets.new(nil, [:public])], id: SFNCollector)
     ]
 
     opts = [strategy: :one_for_one, name: ExBots.Supervisor]
