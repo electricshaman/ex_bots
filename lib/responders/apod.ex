@@ -24,7 +24,7 @@ defmodule ExBots.Responders.Apod do
           reply(msg, "Get it yourself.")
       end
 
-      responded
+      responded()
     end
   end
 
