@@ -44,7 +44,7 @@ defmodule ExBots.Astrobot do
   def handle_disconnect(_reason, state), do: {:reconnect, state}
 
   def handle_in(_msg, state) do
-    {:ok, state}
+    {:noreply, state}
   end
 
   def handle_call(:get_adapter, _from, state) do
