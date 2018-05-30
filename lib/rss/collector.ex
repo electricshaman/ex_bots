@@ -7,17 +7,9 @@ defmodule ExBots.RSS.Collector do
   EEx.function_from_file(:def, :format_entry, "lib/rss/entry.eex", [:assigns])
 
   @entry_days_valid 30
-  @bad_status_code_responses [
-    "I'm drunk.",
-    "I have no idea what's going on right now.",
-    "Strange things are afoot at the Circle K.",
-    "Carl Sagan is my hero.",
-    "Guys",
-    "I believe that you can find happiness in slavery.",
-    "I'm sorry, Dave. I'm afraid I can't do that.",
-    "WTF?",
-    ":boom:",
-    ":joy:"
+  @datetime_formats [
+    "{RFC1123}",
+    "{WDshort}, {D} {Mfull} {YYYY} {h24}:{m}:{s} {Zabbr}"
   ]
 
   def start_link(channel, feed_url, table) do
@@ -25,18 +17,17 @@ defmodule ExBots.RSS.Collector do
   end
 
   def init([channel, feed_url, table]) do
-    state = %{channel: channel, feed_url: feed_url, table: table}
-    Logger.debug("Starting up RSS collector worker with state #{inspect(state)}")
+    init_state = %{channel: channel, feed_url: feed_url, table: table}
+    Logger.debug("Starting up RSS collector worker with state #{inspect(init_state)}")
     Process.send_after(self(), :collect, Enum.random(100..1000))
-    {:ok, state}
+    {:ok, init_state}
   end
 
   def handle_info(:collect, %{feed_url: url, channel: chan, table: tid} = state) do
     first_run? = is_first_run?(tid)
 
     # Hedwig's Robot behaviour hijacks start_link/init so we have to wait for its handle_connect callback
-    # to fire which registers the bot globally, allowing us to find its PID easily.
-    # TODO: Consider switching to GenStateMachine to manage this.
+    # to fire which registers the bot globally, allowing us to find its PID easily (so we can push messages to it).
     _ = wait_for_bot()
 
     with {:ok, entries} <- get_entries(url) do
@@ -51,11 +42,14 @@ defmodule ExBots.RSS.Collector do
     else
       {:error, {:bad_status_code, code}} ->
         Logger.error("Bad status code returned while fetching RSS feed at #{url}: #{code}")
-        Astrobot.send_to_channel(chan, Enum.random(@bad_status_code_responses))
+        Astrobot.send_to_channel(chan, bad_status_code_response())
 
       other ->
-        Logger.error("Something happened: #{inspect(other)}")
-        Astrobot.send_to_channel(chan, "¯\\_(ツ)_/¯")
+        Logger.error(
+          "Something bad happened while fetching RSS feed at #{url}: #{inspect(other)}"
+        )
+
+        Astrobot.send_to_channel(chan, unknown_error_response())
     end
 
     _ = prune_entry_history(tid)
@@ -66,9 +60,28 @@ defmodule ExBots.RSS.Collector do
     {:noreply, state}
   end
 
+  defp bad_status_code_response() do
+    Enum.random([
+      "I'm drunk.",
+      "I have no idea what's going on right now.",
+      "Strange things are afoot at the Circle K.",
+      "Carl Sagan is my hero.",
+      "Guys",
+      "I believe that you can find happiness in slavery.",
+      "I'm sorry, Dave. I'm afraid I can't do that.",
+      "WTF?",
+      ":boom:",
+      ":joy:"
+    ])
+  end
+
+  defp unknown_error_response() do
+    "¯\\_(ツ)_/¯"
+  end
+
   defp prune_entry_history(tid) do
     expired_entries_in_table(tid)
-    |> Enum.each(fn {id, key} ->
+    |> Enum.each(fn {id, _entry} ->
       Logger.debug("Flushing entry from history with ID #{inspect(id)}")
       :ets.delete(tid, id)
     end)
@@ -77,18 +90,45 @@ defmodule ExBots.RSS.Collector do
   defp expired_entries_in_table(tid, num_days_valid \\ @entry_days_valid) do
     :ets.tab2list(tid)
     |> Enum.filter(fn {_id, entry} ->
-      days_old(entry) > num_days_valid
+      case days_old(entry) do
+        {:ok, days} ->
+          days >= num_days_valid
+
+        other ->
+          # If datetime parsing fails, purge the entry.
+          Logger.error("Datetime parsing failed: #{inspect(other)} for entry: #{inspect(entry)}")
+          true
+      end
     end)
   end
 
   defp days_old(%{updated: ts}) do
-    with {:ok, parsed} <- Timex.parse(ts, "{RFC1123}") do
-      Timex.diff(Timex.now(), parsed, :days)
+    with {:ok, datetime} <- parse_datetime(ts, @datetime_formats) do
+      {:ok, Timex.diff(Timex.now(), datetime, :days)}
     end
   end
 
   defp days_old(_other) do
-    {:error, :missing_timestamp}
+    {:error, :bad_entry}
+  end
+
+  defp parse_datetime(datetime_string, [format | rest]) do
+    with {:ok, datetime} <- Timex.parse(datetime_string, format) do
+      {:ok, datetime}
+    else
+      {:error, reason} ->
+        Logger.warn(
+          "Wrong format #{format} for datetime string #{datetime_string}, skipping. Error: #{
+            inspect(reason)
+          }"
+        )
+
+        parse_datetime(datetime_string, rest)
+    end
+  end
+
+  defp parse_datetime(_datetime_string, []) do
+    {:error, :unknown_datetime}
   end
 
   defp get_entries(url) do
