@@ -8,7 +8,6 @@ defmodule ExBots do
       worker(ExBots.Brain, []),
       worker(ExBots.Astrobot, []),
       worker(ExBots.RSS.Collector, ["#bottest", "https://www.universetoday.com/feed/", :ets.new(nil, [:public])], id: UTCollector),
-      worker(ExBots.RSS.Collector, ["#bottest", "https://spaceflightnow.com/feed/", :ets.new(nil, [:public])], id: SFNCollector),
       worker(ExBots.RSS.Collector, ["#bottest", "https://phys.org/rss-feed/space-news/", :ets.new(nil, [:public])], id: PhysCollector)
     ]
 
